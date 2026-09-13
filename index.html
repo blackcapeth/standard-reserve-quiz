@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Standard Reserve — Mint Details Quiz</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #1b1033, #0d0e1f 60%);
+    color: #f4f2ff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 28px 16px 60px;
+  }
+  .wrap { max-width: 460px; width: 100%; }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    background: linear-gradient(90deg, #7de3ff, #ffb347 50%, #ff6ec7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  p.sub { font-size: 13px; color: #b9b3e8; margin: 0 0 22px; line-height: 1.6; }
+
+  .progress { display: flex; gap: 6px; margin-bottom: 22px; }
+  .dot { flex: 1; height: 8px; border-radius: 4px; background: #241a45; }
+  .dot.done-correct { background: #4ad07a; }
+  .dot.done-wrong { background: #ff5c6a; }
+  .dot.current { background: #ffb347; }
+
+  .qcard { background: #241a45; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  .qcard h2 { font-size: 16px; font-weight: 700; margin: 0 0 16px; line-height: 1.4; }
+
+  .opt {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: #2f2358;
+    color: #f4f2ff;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  .opt:hover:not(:disabled) { border-color: #7de3ff; }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: #1f4d2e; border-color: #4ad07a; color: #b6f2c8; }
+  .opt.wrong { background: #4d1f24; border-color: #ff5c6a; color: #ffc2c6; }
+
+  .nextBtn {
+    width: 100%;
+    background: linear-gradient(90deg, #ffb347, #ff6ec7);
+    border: 0;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1130;
+    cursor: pointer;
+    display: none;
+  }
+
+  .result { background: #241a45; border-radius: 16px; padding: 28px; text-align: center; }
+  .result .rank { font-size: 19px; font-weight: 700; margin: 0 0 6px; color: #ffd89a; }
+  .result .score { font-size: 42px; font-weight: 700; margin: 0 0 10px; }
+  .result p { font-size: 13px; color: #b9b3e8; margin: 0 0 18px; }
+  .result button {
+    background: linear-gradient(90deg, #7de3ff, #ffb347);
+    border: 0;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1130;
+    cursor: pointer;
+  }
+
+  #startScreen { text-align: center; }
+  #startScreen button {
+    background: linear-gradient(90deg, #7de3ff, #ffb347, #ff6ec7);
+    border: 0;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1130;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  footer { font-size: 11px; color: #7c76a8; line-height: 1.6; margin-top: 24px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mint Details: do you know?</h1>
+  <p class="sub">6 random questions about The Standard Reserve's mint announcement, pulled fresh from the deck every time you play.</p>
+
+  <div id="startScreen">
+    <button id="startBtn">Start quiz</button>
+  </div>
+
+  <div id="quizScreen" style="display:none;">
+    <div class="progress" id="progress"></div>
+    <div class="qcard">
+      <h2 id="qText">--</h2>
+      <div id="opts"></div>
+    </div>
+    <button class="nextBtn" id="nextBtn">Next question</button>
+  </div>
+
+  <div id="finalScreen" style="display:none;">
+    <div class="result">
+      <p class="rank" id="rankOut">--</p>
+      <p class="score" id="scoreOut">0 / 6</p>
+      <p>correct answers</p>
+      <button id="againBtn">Play again</button>
+    </div>
+  </div>
+
+  <footer>
+    Based on The Standard Reserve's own mint announcement thread.<br>
+    Unofficial fan quiz, not affiliated with the Standard Reserve team.
+  </footer>
+</div>
+
+<script>
+var POOL = [
+  { q: "When does The Standard Reserve launch?", opts: ["9/10", "9/14", "9/20", "10/1"], correct: 1 },
+  { q: "What is the liquidity fee for the whitelist mint?", opts: ["0.05 ETH", "0.1 ETH", "0.5 ETH", "1 ETH"], correct: 1 },
+  { q: "How are the remaining public spots sold after the whitelist mint?", opts: ["Fixed price sale", "Ascending (English) auction", "Descending Dutch auction", "Random lottery"], correct: 2 },
+  { q: "What percentage of mint proceeds goes to the team?", opts: ["30%", "15%", "5%", "0%"], correct: 3 },
+  { q: "What percentage of mint proceeds goes to protocol and liquidity?", opts: ["50%", "70%", "85%", "100%"], correct: 3 },
+  { q: "According to @0xbeans, how much has the team already put into the project themselves?", opts: ["$10k", "$50k", "almost $100k", "$250k"], correct: 2 },
+  { q: "What is the mint's price structure?", opts: ["Only a Dutch auction for everyone", "Fixed WL price, then a descending Dutch auction for the public", "Ascending auction for everyone", "Free mint for everyone"], correct: 1 },
+  { q: "What does @0xbeans say is the goal for launch?", opts: ["Maximize team revenue", "Delay launch further", "Most liquid day-1 launch to kickstart the flywheels", "Limit total participants to under 100"], correct: 2 },
+  { q: "What did the team originally expect about interest in the whitepaper?", opts: ["Massive viral interest from day one", "Relatively small interest, just for a 10-page math paper", "No interest at all", "Interest only from institutions"], correct: 1 },
+  { q: "What was true about mint spots before the latest announcement?", opts: ["Every spot was already allocated", "A significant portion of spots were left unallocated for public participation", "All spots went to the team", "Spots were cancelled entirely"], correct: 1 }
+];
+
+var quiz = [];
+var current = 0;
+var score = 0;
+var answered = false;
+var results = [];
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function buildQuiz() {
+  var picked = shuffle(POOL).slice(0, 6);
+  return picked.map(function(item){
+    var order = shuffle(item.opts.map(function(text, idx){ return { text: text, isCorrect: idx === item.correct }; }));
+    return { q: item.q, options: order };
+  });
+}
+
+function renderProgress() {
+  var el = document.getElementById('progress');
+  el.innerHTML = '';
+  for (var i = 0; i < quiz.length; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot';
+    if (i < results.length) d.className += results[i] ? ' done-correct' : ' done-wrong';
+    else if (i === current) d.className += ' current';
+    el.appendChild(d);
+  }
+}
+
+function renderQuestion() {
+  answered = false;
+  var item = quiz[current];
+  document.getElementById('qText').textContent = item.q;
+  var optsEl = document.getElementById('opts');
+  optsEl.innerHTML = '';
+  item.options.forEach(function(opt){
+    var btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = opt.text;
+    btn.addEventListener('click', function(){ selectAnswer(opt.isCorrect, btn); });
+    optsEl.appendChild(btn);
+  });
+  document.getElementById('nextBtn').style.display = 'none';
+  renderProgress();
+}
+
+function selectAnswer(isCorrect, btn) {
+  if (answered) return;
+  answered = true;
+  results.push(isCorrect);
+  if (isCorrect) score++;
+  document.querySelectorAll('.opt').forEach(function(b){
+    b.disabled = true;
+    var text = b.textContent;
+    var thisItem = quiz[current].options.find(function(o){ return o.text === text; });
+    if (thisItem.isCorrect) b.classList.add('correct');
+    else if (b === btn) b.classList.add('wrong');
+  });
+  document.getElementById('nextBtn').style.display = 'block';
+  renderProgress();
+}
+
+document.getElementById('nextBtn').addEventListener('click', function(){
+  current++;
+  if (current >= quiz.length) {
+    endQuiz();
+  } else {
+    renderQuestion();
+  }
+});
+
+function endQuiz() {
+  document.getElementById('quizScreen').style.display = 'none';
+  document.getElementById('finalScreen').style.display = 'block';
+  document.getElementById('scoreOut').textContent = score + ' / 6';
+  var rank;
+  if (score <= 1) rank = 'Never read the thread';
+  else if (score <= 3) rank = 'Skimmed it';
+  else if (score <= 5) rank = 'Actually paying attention';
+  else rank = 'Mint Details expert';
+  document.getElementById('rankOut').textContent = rank;
+}
+
+document.getElementById('startBtn').addEventListener('click', function(){
+  quiz = buildQuiz();
+  current = 0;
+  score = 0;
+  results = [];
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  renderQuestion();
+});
+
+document.getElementById('againBtn').addEventListener('click', function(){
+  document.getElementById('finalScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+});
+</script>
+</body>
+</html>
